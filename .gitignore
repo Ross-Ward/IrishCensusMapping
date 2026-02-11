@@ -1,0 +1,26 @@
+# Rust build artifacts
+/target
+
+# Generated output (tiles are large, regenerate with `cargo run --release -- generate`)
+/output
+
+# Data files (too large for git, download separately)
+/data
+
+# Temp/log files
+*.log
+errors.txt
+header.csv
+run.log
+err.txt
+compilation_log.txt
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo

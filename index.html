@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Irish Census Explorer</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style type="text/css">
+        body,
+        html {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+
+        .legend {
+            line-height: 20px;
+            color: #333;
+            padding: 12px 14px;
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 1px 5px rgba(0, 0, 0, 0.3);
+            border-radius: 6px;
+            min-width: 160px;
+        }
+
+        .legend h4 {
+            margin: 0 0 8px 0;
+            font-size: 14px;
+            color: #333;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 5px;
+        }
+
+        .legend i {
+            width: 14px;
+            height: 14px;
+            float: left;
+            margin-right: 8px;
+            margin-top: 2px;
+            opacity: 0.85;
+            border-radius: 50%;
+        }
+
+        .info {
+            padding: 10px 14px;
+            font: 13px/18px Arial, Helvetica, sans-serif;
+            background: rgba(255, 255, 255, 0.92);
+            box-shadow: 0 1px 5px rgba(0, 0, 0, 0.3);
+            border-radius: 6px;
+            min-width: 220px;
+            max-width: 320px;
+        }
+
+        .info h4 {
+            margin: 0 0 5px 0;
+            color: #333;
+        }
+
+        .info h5 {
+            margin: 8px 0 4px 0;
+            color: #555;
+            font-size: 12px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 2px;
+        }
+
+        .info b {
+            color: #444;
+            font-size: 11px;
+        }
+
+        #dotref {
+            font-size: 11px;
+            color: #888;
+            margin-top: 4px;
+        }
+    </style>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+
+<body>
+    <div id="map"></div>
+    <script>
+        // ==============================
+        // Configuration
+        // ==============================
+        var DATASETS = {
+            "Ethnicity": {
+                url: '/tiles/Ethnicity/{z}/{x}/{y}.png',
+                categories: [
+                    { name: 'White Irish', color: '#0e9404' },
+                    { name: 'Irish Traveller', color: '#eca100' },
+                    { name: 'Other White', color: '#0053d1' },
+                    { name: 'Black', color: '#7000e1' },
+                    { name: 'Asian', color: '#e10003' },
+                    { name: 'Other', color: '#845300' }
+                ]
+            },
+            "Religion": {
+                url: '/tiles/Religion/{z}/{x}/{y}.png',
+                categories: [
+                    { name: 'Catholic', color: '#d4af37' },
+                    { name: 'Other Religion', color: '#555555' },
+                    { name: 'No Religion', color: '#000000' }
+                ]
+            },
+            "Health": {
+                url: '/tiles/Health/{z}/{x}/{y}.png',
+                categories: [
+                    { name: 'Very Good', color: '#006400' },
+                    { name: 'Good', color: '#90EE90' },
+                    { name: 'Fair', color: '#FFFF00' },
+                    { name: 'Bad', color: '#FFA500' },
+                    { name: 'Very Bad', color: '#FF0000' }
+                ]
+            }
+        };
+
+        var currentDataset = "Ethnicity";
+
+        // ==============================
+        // Map Init
+        // ==============================
+        var map = L.map('map', { minZoom: 7, maxZoom: 14 }).setView([53.4, -8.2], 7);
+
+        // Basemap
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 19
+        }).addTo(map);
+
+        // ==============================
+        // Tile Layers (one per dataset)
+        // ==============================
+        var tileLayers = {};
+        for (var key in DATASETS) {
+            tileLayers[key] = L.tileLayer(DATASETS[key].url, {
+                maxZoom: 14,
+                tms: false,
+                attribution: "CSO Census 2022",
+                errorTileUrl: '' // suppress missing tile errors
+            });
+        }
+
+        // Add default layer
+        tileLayers["Ethnicity"].addTo(map);
+
+        // Layer control (radio buttons)
+        L.control.layers(tileLayers, null, { collapsed: false }).addTo(map);
+
+        // ==============================
+        // Legend (bottom-right)
+        // ==============================
+        var legend = L.control({ position: 'bottomright' });
+
+        legend.onAdd = function () {
+            this._div = L.DomUtil.create('div', 'legend');
+            this.update("Ethnicity");
+            return this._div;
+        };
+
+        legend.update = function (datasetName) {
+            var ds = DATASETS[datasetName];
+            if (!ds) return;
+
+            var categories = ds.categories;
+            var html = '<h4>' + datasetName + '</h4>';
+            for (var i = 0; i < categories.length; i++) {
+                html += '<i style="background:' + categories[i].color + '"></i> ' +
+                    categories[i].name + '<br>';
+            }
+            html += '<div id="dotref">1 dot = 1 person</div>';
+            this._div.innerHTML = html;
+        };
+
+        legend.addTo(map);
+
+        // Update legend when user switches layer
+        map.on('baselayerchange', function (e) {
+            currentDataset = e.name;
+            legend.update(e.name);
+        });
+
+        // ==============================
+        // Info Panel (top-right, hover)
+        // ==============================
+        var info = L.control({ position: 'topright' });
+
+        info.onAdd = function () {
+            this._div = L.DomUtil.create('div', 'info');
+            this.clear();
+            return this._div;
+        };
+
+        info.clear = function () {
+            this._div.innerHTML = '<h4>Area Info</h4>Hover over the map';
+        };
+
+        info.show = function (data) {
+            if (!data) {
+                this.clear();
+                return;
+            }
+            var html = '<h4>Area Info</h4>';
+            html += '<b>' + data.id + '</b>';
+
+            for (var dataset in data.population_data) {
+                html += '<h5>' + dataset + '</h5>';
+                var catData = data.population_data[dataset];
+                var keys = Object.keys(catData).sort();
+                for (var i = 0; i < keys.length; i++) {
+                    html += keys[i] + ': <strong>' + catData[keys[i]] + '</strong><br>';
+                }
+            }
+            this._div.innerHTML = html;
+        };
+
+        info.addTo(map);
+
+        // ==============================
+        // Mouse Interaction (debounced)
+        // ==============================
+        var hoverTimeout;
+        var lastQueryKey = '';
+
+        map.on('mousemove', function (e) {
+            clearTimeout(hoverTimeout);
+            hoverTimeout = setTimeout(function () {
+                var lat = e.latlng.lat.toFixed(5);
+                var lng = e.latlng.lng.toFixed(5);
+                var queryKey = lat + ',' + lng;
+
+                // Skip if same position
+                if (queryKey === lastQueryKey) return;
+                lastQueryKey = queryKey;
+
+                fetch('/api/query?lat=' + lat + '&lon=' + lng)
+                    .then(function (response) { return response.json(); })
+                    .then(function (data) {
+                        info.show(data);
+                    })
+                    .catch(function () {
+                        // silently ignore network errors
+                    });
+            }, 100);
+        });
+
+    </script>
+</body>
+
+</html>

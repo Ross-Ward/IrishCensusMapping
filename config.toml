@@ -1,0 +1,105 @@
+[input]
+shapefile = "data/Small_Area_National_Statistical_Boundaries_2022_Ungeneralised_view_8865831477585298158.geojson"
+data_csv = "data/SAPS_2022_Small_Area_UR_171024.csv"
+join_column_shape = "SA_GUID_2022"
+join_column_csv = "GUID"
+water_mask = "data/HighWaterMark_NationalWaterMarks_Ungeneralised_2024_-3597060113711012582.geojson"
+
+[processing]
+
+# --- DATASET 1: ETHNICITY ---
+[processing.datasets.Ethnicity]
+
+[[processing.datasets.Ethnicity.categories]]
+name = "White Irish"
+color = "#0e9404"
+columns = ["T2_2WI"]
+
+[[processing.datasets.Ethnicity.categories]]
+name = "Irish Traveller"
+color = "#eca100"
+columns = ["T2_2WIT"]
+
+[[processing.datasets.Ethnicity.categories]]
+name = "Other White"
+color = "#0053d1"
+columns = ["T2_2OW"]
+
+[[processing.datasets.Ethnicity.categories]]
+name = "Black"
+color = "#7000e1"
+columns = ["T2_2BBI"] 
+
+[[processing.datasets.Ethnicity.categories]]
+name = "Asian"
+color = "#e10003"
+columns = ["T2_2AAI"] 
+
+[[processing.datasets.Ethnicity.categories]]
+name = "Other"
+color = "#845300"
+columns = ["T2_2OTH"]
+
+[processing.datasets.Ethnicity.not_stated]
+column = "T2_2NS"
+
+# --- DATASET 2: RELIGION ---
+[processing.datasets.Religion]
+
+[[processing.datasets.Religion.categories]]
+name = "Catholic"
+color = "#d4af37" # Gold
+columns = ["T2_4CA"]
+
+[[processing.datasets.Religion.categories]]
+name = "Other Religion"
+color = "#555555" # Grey
+columns = ["T2_4OR"]
+
+[[processing.datasets.Religion.categories]]
+name = "No Religion"
+color = "#000000" # Black
+columns = ["T2_4NR"]
+
+[processing.datasets.Religion.not_stated]
+column = "T2_4NS"
+
+# --- DATASET 3: HEALTH ---
+[processing.datasets.Health]
+
+[[processing.datasets.Health.categories]]
+name = "Very Good"
+color = "#006400" # Dark Green
+columns = ["T12_3_VGT"]
+
+[[processing.datasets.Health.categories]]
+name = "Good"
+color = "#90EE90" # Light Green
+columns = ["T12_3_GT"]
+
+[[processing.datasets.Health.categories]]
+name = "Fair"
+color = "#FFFF00" # Yellow
+columns = ["T12_3_FT"]
+
+[[processing.datasets.Health.categories]]
+name = "Bad"
+color = "#FFA500" # Orange
+columns = ["T12_3_BT"]
+
+[[processing.datasets.Health.categories]]
+name = "Very Bad"
+color = "#FF0000" # Red
+columns = ["T12_3_VBT"]
+
+[processing.datasets.Health.not_stated]
+column = "T12_3_NST"
+
+[output]
+tile_dir = "output/tiles"
+min_zoom = 7
+max_zoom = 14
+
+[server]
+port = 3000
+
