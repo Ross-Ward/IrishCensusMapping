@@ -1,41 +1,62 @@
-# Dot Density Map (Rust)
+# Irish Census Mapping
 
-A high-performance, extensible Rust application to generate dot density maps from Census data and Shapefiles.
+A high-performance Rust application that generates interactive dot density maps from Irish Census 2022 data.
 
-## Project Structure
-- `src/`: Rust source code.
-- `config.toml`: Configuration for inputs, styling, and outputs.
-- `index.html`: Frontend to view the generated tiles.
+## Features
+
+- **Multi-Dataset Support** — Visualise Ethnicity, Religion, and Health data as separate layers
+- **Water Masking** — Removes water bodies from land areas so dots only appear on land
+- **Interactive API** — Hover over any area to see a full demographic breakdown
+- **Fast** — Parallel tile rendering with Rayon (processes 15M+ dots)
+- **Configurable** — Add new Census themes by editing `config.toml`
 
 ## Prerequisites
-1.  **Rust**: Install from [rustup.rs](https://rustup.rs).
-2.  **Data**:
-    -   **Polygon Data**: Shapefile (`.shp`, `.shx`, `.dbf`) containing the regions (e.g., CSO Small Areas).
-    -   **Attribute Data**: CSV file containing the population counts per region.
-    -   **Join Column**: A common column in both files (e.g., `GUID`).
+
+1. **Rust** — Install from [rustup.rs](https://rustup.rs)
+2. **Data** (not included in repo, too large):
+   - **GeoJSON boundaries** — CSO Small Area boundaries (ungeneralised)
+   - **SAPS CSV** — Small Area Population Statistics from [CSO](https://www.cso.ie)
+   - **Water mask GeoJSON** — High Water Mark boundaries (optional)
 
 ## Setup
-1.  Place your `.shp` and `.csv` files in the `data/` directory.
-2.  Update `config.toml` to match your filenames and column names.
-    -   `[input]`: Set paths and join columns.
-    -   `[processing]`: Define categories and their corresponding CSV columns.
+
+1. Create a `data/` directory and place your data files there.
+2. Edit `config.toml` to match your filenames, join columns, and desired categories.
 
 ## Usage
 
-### 1. Generate Tiles
-Run the generation command. This reads the data, processes points, and renders tiles.
+### Generate Tiles
 ```
-cargo run --release -- generate --config config.toml
+cargo run --release -- generate
 ```
+Processes data and renders PNG tiles into `output/tiles/{Dataset}/{z}/{x}/{y}.png`.
 
-### 2. Serve Map
-Start the local server to view your map.
+### Serve Map
 ```
-cargo run --release -- serve --config config.toml
+cargo run --release -- serve
 ```
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Opens an interactive map at [http://localhost:3000](http://localhost:3000) with:
+- Layer switcher (Ethnicity / Religion / Health)
+- Dynamic legend
+- Hover info panel with per-area breakdowns
 
-## Logic
--   **Not Stated Distribution**: The "Not Stated" population is distributed proportionally among the known categories within each region.
--   **Point Generation**: Points are randomly generated within the polygon geometry.
--   **Rendering**: Tiles are generated using Parallel processing for maximum speed.
+## Architecture
+
+| Module | Role |
+|---|---|
+| `config.rs` | TOML configuration parsing |
+| `data.rs` | CSV + GeoJSON loading and joining |
+| `masking.rs` | Water body subtraction using R-tree spatial index |
+| `processing.rs` | Dot generation with "Not Stated" proportional distribution |
+| `render.rs` | Parallel Web Mercator tile rendering |
+| `server.rs` | Axum web server with spatial query API |
+
+## Configuration
+
+Datasets are defined in `config.toml` under `[processing.datasets]`. Each dataset has:
+- **categories** — name, color, and CSV column(s)
+- **not_stated** — column for proportional redistribution
+
+## License
+
+MIT
